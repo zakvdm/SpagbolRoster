@@ -10,13 +10,22 @@
 			$(function(){
                 $( "div[id^='draggable']" ).draggable({ helper: "clone" , cursor: "move" });
 
-                $( "#weekday-monday" ).droppable({ drop: handleDrop });
-                $( "#weekday-tuesday" ).droppable({ drop: handleDrop });
-                $( "#weekday-wednesday" ).droppable({ drop: handleDrop });
-                $( "#weekday-thursday" ).droppable({ drop: handleDrop });
-                $( "#weekday-friday" ).droppable({ drop: handleDrop });
-                $( "#weekday-saturday" ).droppable({ drop: handleDrop });
-                $( "#weekday-sunday" ).droppable({ drop: handleDrop });
+                $( "#weekday-monday" ).droppable({ drop: handleDrop,
+                                                   hoverClass: "ui-state-active" });
+                $( "#weekday-tuesday" ).droppable({ drop: handleDrop,
+                                                   hoverClass: "ui-state-active" });
+                $( "#weekday-wednesday" ).droppable({ drop: handleDrop,
+                                                   hoverClass: "ui-state-active" });
+                $( "#weekday-thursday" ).droppable({ drop: handleDrop,
+                                                   hoverClass: "ui-state-active" });
+                $( "#weekday-friday" ).droppable({ drop: handleDrop,
+                                                   hoverClass: "ui-state-active" });
+                $( "#weekday-saturday" ).droppable({ drop: handleDrop,
+                                                   hoverClass: "ui-state-active" });
+                $( "#weekday-sunday" ).droppable({ drop: handleDrop,
+                                                   hoverClass: "ui-state-active" });
+                $( "#weekday-noday" ).droppable({ drop: handleDrop,
+                                                   hoverClass: "ui-state-active" });
 
                 function handleDrop( event, ui ) {
                     //Get Details of dragged and dropped
@@ -26,96 +35,96 @@
                     $(cook).detach().css({top: 0, left: 0}).appendTo(day);
                 }
 
-				// Accordion
-				$("#accordion").accordion({ header: "h3" });
-	
-				// Tabs
-				$('#tabs').tabs();
-	
 
-				// Dialog			
-				$('#dialog').dialog({
-					autoOpen: false,
-					width: 600,
-					buttons: {
-						"Ok": function() { 
-							$(this).dialog("close"); 
-						}, 
-						"Cancel": function() { 
-							$(this).dialog("close"); 
-						} 
-					}
-				});
-				
-				// Dialog Link
-				$('#dialog_link').click(function(){
-					$('#dialog').dialog('open');
-					return false;
-				});
+                function assignAllCooksToNoDay() {
+                    cooks = $( "div[id^='draggable']" );
 
-				// Datepicker
-				$('#datepicker').datepicker({
-					inline: true
-				});
-				
-				// Slider
-				$('#slider').slider({
-					range: true,
-					values: [17, 67]
-				});
-				
-				// Progressbar
-				$("#progressbar").progressbar({
-					value: 20 
-				});
-				
-				//hover states on the static widgets
-				$('#dialog_link, ul#icons li').hover(
-					function() { $(this).addClass('ui-state-hover'); }, 
-					function() { $(this).removeClass('ui-state-hover'); }
-				);
-				
+                    $.each(cooks, function(index) {
+                        assignCookToDay( "noday", $(this) );
+                    })
+                }
+
+                assignAllCooksToNoDay();
+
+                var json = "{ \"monday\": \"chris\", \"tuesday\": \"zak\", \"friday\": \"nick\" }"
+                var data = $.parseJSON(json)
+                loadCookingDaysFromServer(data);
+
+                function loadCookingDaysFromServer(data) {
+                    $.each(data, function(key, val) {
+                        cook = val
+                        assignCookToDay(key, $( "#draggable-" + cook ) );
+                    });
+                }
+
+                function assignCookToDay( day, cookElement ) {
+                    var dayElement = $( "#weekday-" + day );
+
+                    cookElement.detach().css({top: 0, left: 0}).appendTo(dayElement);
+                }
+
+                $( ".save button:first" ).button({
+                                             icons: { primary: "ui-icon-gear" }
+                                                 }).click(saveAndNotify);
+
+                function saveAndNotify() {
+                    chrisElement = $( "#draggable-chris" )[0];
+                    chrisDay = chrisElement.parentElement.id.split('-')[1]
+                    nickElement = $( "#draggable-nick" )[0];
+                    nickDay = nickElement.parentElement.id.split('-')[1]
+                    steveElement = $( "#draggable-steve" )[0];
+                    steveDay = steveElement.parentElement.id.split('-')[1]
+                    zakElement = $( "#draggable-zak" )[0];
+                    zakDay = zakElement.parentElement.id.split('-')[1]
+
+                    var days = {};
+                    if (!days[chrisDay]) {
+                        days[
+                    }
+
+
+                    alert(chrisDay);
+                }
+
 			});
 		</script>
 		<style type="text/css">
 			/*demo page css*/
 			body{ font: 62.5% "Trebuchet MS", sans-serif; margin: 50px;}
 			.demoHeaders { margin-top: 2em; }
-			#dialog_link {padding: .4em 1em .4em 20px;text-decoration: none;position: relative;}
-			#dialog_link span.ui-icon {margin: 0 5px 0 0;position: absolute;left: .2em;top: 50%;margin-top: -8px;}
-			ul#icons {margin: 0; padding: 0;}
-			ul#icons li {margin: 2px; position: relative; padding: 4px 0; cursor: pointer; float: left;  list-style: none;}
-			ul#icons span.ui-icon {float: left; margin: 0 4px;}
 
             /* Droppable */
             .draggable { width: 90px; height: 30px; padding: 0.5em; text-align: center; float: left; cursor: move; margin: 10px 10px 10px 0; }
-	        /*.droppable { width: 110px; height: 200px; padding: 0.5em; float: left; margin: 10px; }*/
 
-            #weekdays { float: left; width: 95%; min-height: 12em; } * html #gallery { height: 12em; } /* IE6 */
-            /*
-            .weekdays.custom-state-active { background: #eee; }
-*/
+            #weekdays { float: left; width: 100%; min-height: 12em; } * html #gallery { height: 12em; } /* IE6 */
             .weekdays li { float: left; width: 100px; height: 150px; padding: 0.4em; margin: 0 0.4em 0.4em 0; text-align: center; }
+
+            #weekday-noday { float: left; width: 150px; height: 250px; padding: 0.4em; margin: 5em 0.4em 0.4em 0; text-align: center; }
+
             #draggable-chris { background: LightSalmon }
             #draggable-nick { background: PaleVioletRed }
             #draggable-steve { background: DeepSkyBlue }
             #draggable-zak { background: #0dd }
+
+            button { float: right; width: 200px; height: 30px; margin: 2em 0 2em 1em; }
 
 		</style>	
 	</head>
 	<body>
 	<h1>Welcome to Spagbol Roster!</h1>
 
-    <div>
-    <ul id="weekdays" class="weekdays ui-helper-reset ui-helper-clearfix">
-      <li id="weekday-monday" class="droppable ui-widget-content">Monday</li>
-      <li id="weekday-tuesday" class="droppable ui-widget-content">Tuesday</li>
-      <li id="weekday-wednesday" class="droppable ui-widget-content">Wednesday</li>
-      <li id="weekday-thursday" class="droppable ui-widget-content">Thursday</li>
-      <li id="weekday-friday" class="droppable ui-widget-content">Friday</li>
-      <li id="weekday-saturday" class="droppable ui-widget-content">Saturday</li>
-      <li id="weekday-sunday" class="droppable ui-widget-content">Sunday</li>
-    </ul>
+    <div class="ui-widget ui-helper-clearfix">
+      <ul id="weekdays" class="weekdays ui-helper-reset ui-helper-clearfix">
+        <li id="weekday-monday" class="droppable ui-widget-content">Monday</li>
+        <li id="weekday-tuesday" class="droppable ui-widget-content">Tuesday</li>
+        <li id="weekday-wednesday" class="droppable ui-widget-content">Wednesday</li>
+        <li id="weekday-thursday" class="droppable ui-widget-content">Thursday</li>
+        <li id="weekday-friday" class="droppable ui-widget-content">Friday</li>
+        <li id="weekday-saturday" class="droppable ui-widget-content">Saturday</li>
+        <li id="weekday-sunday" class="droppable ui-widget-content">Sunday</li>
+      </ul>
+      <div class="save"><button>Save & Notify</button></div>
+      <div id="weekday-noday" class="ui-widget-content">Not Cooking</div>
     </div>
 
     <div id="draggable-chris" class="draggable ui-widget-content ui-corner-all"><p>Chris</p></div>
@@ -123,12 +132,6 @@
     <div id="draggable-steve" class="draggable ui-widget-content ui-corner-all"><p>Steve</p></div>
     <div id="draggable-zak" class="draggable ui-widget-content ui-corner-all"><p>Zak</p></div>
 
-    <h2>END</h2>
-    <h2>END</h2>
-    <h2>END</h2>
-    <h2>END</h2>
-    <h2>END</h2>
-    <h2>END</h2>
     <p></p>
     <p/>
     <div/>
@@ -138,14 +141,14 @@
 		<div class="ui-widget">
 			<div class="ui-state-highlight ui-corner-all" style="margin-top: 20px; padding: 0 .7em;"> 
 				<p><span class="ui-icon ui-icon-info" style="float: left; margin-right: .3em;"></span>
-				<strong>Hey!</strong> Sample ui-state-highlight style.</p>
+				<strong>Woah!</strong> Don't forget to click save & notify when you're happy.</p>
 			</div>
 		</div>
 		<br/>
 		<div class="ui-widget">
 			<div class="ui-state-error ui-corner-all" style="padding: 0 .7em;"> 
 				<p><span class="ui-icon ui-icon-alert" style="float: left; margin-right: .3em;"></span> 
-				<strong>Alert:</strong> Sample ui-state-error style.</p>
+				<strong>Umm.</strong> We all make mistakes?</p>
 			</div>
 		</div>
 
