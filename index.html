@@ -46,15 +46,25 @@
 
                 assignAllCooksToNoDay();
 
-                var json = "{ \"monday\": \"chris\", \"tuesday\": \"zak\", \"friday\": \"nick\" }"
-                var data = $.parseJSON(json)
-                loadCookingDaysFromServer(data);
+                loadCookingDaysFromServer();
 
-                function loadCookingDaysFromServer(data) {
-                    $.each(data, function(key, val) {
-                        cook = val
-                        assignCookToDay(key, $( "#draggable-" + cook ) );
-                    });
+                //var json = "{ \"monday\": \"chris\", \"tuesday\": \"zak\", \"friday\": \"nick\" }"
+
+                function loadCookingDaysFromServer() {
+                    $.ajax({
+                        type: 'GET',
+                        url: "/loadSchedule",
+                        contentType: "application/json",
+                        success: function(json) {
+                                   var data = $.parseJSON(json);
+
+                                   $.each(data, function(key, val) {
+                                       cook = key
+                                       day = val
+                                       assignCookToDay(day, $( "#draggable-" + cook ) );
+                                   });
+                             }
+                     });
                 }
 
                 function assignCookToDay( day, cookElement ) {
@@ -63,27 +73,38 @@
                     cookElement.detach().css({top: 0, left: 0}).appendTo(dayElement);
                 }
 
+
+
                 $( ".save button:first" ).button({
                                              icons: { primary: "ui-icon-gear" }
                                                  }).click(saveAndNotify);
 
                 function saveAndNotify() {
-                    chrisElement = $( "#draggable-chris" )[0];
-                    chrisDay = chrisElement.parentElement.id.split('-')[1]
-                    nickElement = $( "#draggable-nick" )[0];
-                    nickDay = nickElement.parentElement.id.split('-')[1]
-                    steveElement = $( "#draggable-steve" )[0];
-                    steveDay = steveElement.parentElement.id.split('-')[1]
-                    zakElement = $( "#draggable-zak" )[0];
-                    zakDay = zakElement.parentElement.id.split('-')[1]
+                    chrisElement = $( "#draggable-chris" );
+                    chrisDay = chrisElement.parent()[0].id.split('-')[1]
+                    nickElement = $( "#draggable-nick" );
+                    nickDay = nickElement.parent()[0].id.split('-')[1]
+                    steveElement = $( "#draggable-steve" );
+                    steveDay = steveElement.parent()[0].id.split('-')[1]
+                    zakElement = $( "#draggable-zak" );
+                    zakDay = zakElement.parent()[0].id.split('-')[1]
 
-                    var days = {};
-                    if (!days[chrisDay]) {
-                        days[
-                    }
+                    dataObj = { "chris":chrisDay, "nick":nickDay, "steve":steveDay, "zak":zakDay };
 
+                    $.ajax({
+                        type: 'PUT',
+                        url: "/saveSchedule",
+                        data: JSON.stringify(dataObj),
+                        contentType: "application/json",
+                        success: function(data){  
+                            },
+                        complete: function(){ 
+                            }
+                        });
+                }
 
-                    alert(chrisDay);
+                function saveSuccessCallback(response) {
+                    alert(response);
                 }
 
 			});

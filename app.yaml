@@ -1,0 +1,10 @@
+application: spagbolroster
+version: 1
+runtime: python
+api_version: 1
+
+handlers:
+- url: /jqueryui
+  static_dir: jqueryui
+- url: /.*
+  script: main.py
