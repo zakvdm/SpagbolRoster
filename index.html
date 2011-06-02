@@ -63,15 +63,18 @@
                         url: "/loadSchedule",
                         contentType: "application/json",
                         success: function(json) {
-                                   var data = $.parseJSON(json);
+                                var data = $.parseJSON(json);
+                                if (data == null) {
+                                    data = json;
+                                }
 
-                                   $.each(data, function(key, val) {
+                                $.each(data, function(key, val) {
                                        cook = key
                                        day = val
                                        assignCookToDay(day, $( "#draggable-" + cook ) );
                                    });
 
-                                   showMessage("info", onLoadMessage);
+                                showMessage("info", onLoadMessage);
                              }
                      });
                 }
@@ -135,11 +138,11 @@
                     if (status == "error") {
                         messageElement.removeClass("ui-state-highlight");
                         messageElement.addClass("ui-state-error");
-                        setTimeout(function() { messageElement.fadeOut('slow'); }, 10000);
+                        setTimeout(function() { messageElement.fadeOut('slow'); }, 15000);
                     } else {
                         messageElement.removeClass("ui-state-error");
                         messageElement.addClass("ui-state-highlight");
-                        setTimeout(function() { messageElement.fadeOut('slow'); }, 7000);
+                        setTimeout(function() { messageElement.fadeOut('slow'); }, 10000);
                     }
                 }
 
@@ -161,8 +164,8 @@
               color: #222;
             }
 
-            #container { width: 800px; }
-            #header { width: 800px; height: 60px; }
+            #container { width: 810px; }
+            #header { width: 810px; height: 60px; }
             #header span { margin-left: 80px; }
             #header a { float: right; margin-top: 40px; margin-right: 20px; font-size: 1.2em }
 

@@ -16,7 +16,8 @@ from google.appengine.ext.webapp.util import run_wsgi_app
 
 namesDictionary = {"chris":"Chris De Kat", "nick":"n", "steve":"Chrevan", "zak":"iZak"}
 dayDictionary = {"monday":"Monday", "tuesday":"Tuesday", "wednesday":"Wednesday", "thursday":"Thursday", "friday":"Friday", "saturday":"Saturday", "sunday":"Sunday", "noday":"Not Cooking"}
-notificationRecipients = "Chris <chrisdk@gmail.com>, Nicholas <nicholas.savage@gmail.com>, Stephen <sasherson@gmail.com, Zak <zakvdm@gmail.com>"
+#notificationRecipients = "'Chris <chrisdk@gmail.com>', 'Nicholas <nicholas.savage@gmail.com>', 'Stephen <sasherson@gmail.com>', 'Zak <zakvdm@gmail.com>'"
+notificationRecipients = "'Zak <zakvdm@gmail.com>', 'Nicholas <nicholas.savage@gmail.com>'"
 
 class Schedule(db.Model):
     json = db.StringProperty()
@@ -85,7 +86,7 @@ class SaveSchedule(webapp.RequestHandler):
         self.notify(simplejson.loads(self.request.body))
 
         self.response.headers.add_header("Content-Type", "application/json") 
-        self.response.out.write("Success!")
+        self.response.out.write("{}")
 
     def notify(self, schedule):
         chrisSchedule = namesDictionary["chris"] + " - " + dayDictionary[schedule["chris"]]
@@ -93,11 +94,11 @@ class SaveSchedule(webapp.RequestHandler):
         steveSchedule = namesDictionary["steve"] + " - " + dayDictionary[schedule["steve"]]
         zakSchedule = namesDictionary["zak"] + " - " + dayDictionary[schedule["zak"]]
         
-        body = "The new shedule is:" + "\n  " + chrisSchedule + "\n  " + nickSchedule + "\n  " + steveSchedule + "\n  " + zakSchedule
+        body = "The new shedule is:" + "\n  " + chrisSchedule + "\n  " + nickSchedule + "\n  " + steveSchedule + "\n  " + zakSchedule + "\n\n ~ http://spagbolroster.appspot.com"
 
         logging.debug("Sending email message with body: " + body);
 
-        mail.send_mail(sender="Spagbol Roster <zakvdm@gmail.com>",
+        mail.send_mail(sender="Spagbol Roster <update@spagbolroster.appspotmail.com>",
                        to=notificationRecipients,
                        subject="Spagbol Roster has been updated",
                        body=body)
