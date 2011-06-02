@@ -14,10 +14,9 @@ from google.appengine.ext import webapp
 from google.appengine.ext.webapp import template
 from google.appengine.ext.webapp.util import run_wsgi_app
 
-namesDictionary = {"chris":"Chris De Kat", "nick":"n", "steve":"Chrevan", "zak":"iZak"}
+namesDictionary = {"chris":"Chris", "nick":"Nick", "steve":"Steve", "zak":"Zak"}
 dayDictionary = {"monday":"Monday", "tuesday":"Tuesday", "wednesday":"Wednesday", "thursday":"Thursday", "friday":"Friday", "saturday":"Saturday", "sunday":"Sunday", "noday":"Not Cooking"}
-#notificationRecipients = "'Chris <chrisdk@gmail.com>', 'Nicholas <nicholas.savage@gmail.com>', 'Stephen <sasherson@gmail.com>', 'Zak <zakvdm@gmail.com>'"
-notificationRecipients = "'Zak <zakvdm@gmail.com>', 'Nicholas <nicholas.savage@gmail.com>'"
+notificationRecipients = "'Chris <chrisdk@gmail.com>', 'Nicholas <nicholas.savage@gmail.com>', 'Stephen <sasherson@gmail.com>', 'Zak <zakvdm@gmail.com>'"
 
 class Schedule(db.Model):
     json = db.StringProperty()
