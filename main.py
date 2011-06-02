@@ -7,26 +7,31 @@ import wsgiref.handlers
 
 from django.utils import simplejson
 
-from google.appengine.ext import db
+from google.appengine.api import mail
 from google.appengine.api import users
+from google.appengine.ext import db
 from google.appengine.ext import webapp
 from google.appengine.ext.webapp import template
 from google.appengine.ext.webapp.util import run_wsgi_app
+
+namesDictionary = {"chris":"Chris De Kat", "nick":"n", "steve":"Chrevan", "zak":"iZak"}
+dayDictionary = {"monday":"Monday", "tuesday":"Tuesday", "wednesday":"Wednesday", "thursday":"Thursday", "friday":"Friday", "saturday":"Saturday", "sunday":"Sunday", "noday":"Not Cooking"}
 
 class Schedule(db.Model):
     json = db.StringProperty()
 
 class MainPage(webapp.RequestHandler):
     def get(self):
-        #cooks_query = Cook.all().ancestor(cook_key('househusbands'))
-        #cooks = cooks_query.fetch(4)
-        #template_values = {
-                    #'cooks': cooks
-                #}
+        login_url = None
+        if not users.get_current_user():
+            login_url = users.create_login_url(self.request.uri)
+
+        template_values = {
+                 'login_url': login_url,
+             }
 
         path = os.path.join(os.path.dirname(__file__), 'index.html')
-        #self.response.out.write(template.render(path, template_values))
-        self.response.out.write(template.render(path, None))
+        self.response.out.write(template.render(path, template_values))
 
 class LoadSchedule(webapp.RequestHandler):
     def get(self):
@@ -46,6 +51,11 @@ class LoadSchedule(webapp.RequestHandler):
 class SaveSchedule(webapp.RequestHandler):
 
     def put(self):
+        # Check that the request was made by a house husbands
+        if not users.is_current_user_admin():
+            self.error(403) # access denied
+            return
+
         logging.info("Received save request: " + self.request.body);
 
         schedule_query = Schedule.all() #.ancestor(cook_key('househusbands'))
@@ -63,17 +73,30 @@ class SaveSchedule(webapp.RequestHandler):
             schedule.put()
             logging.info("Updated schedule");
 
-        #if func[0] == '_':
-            #self.error(403) # access denied
-            #return
 
-        #func = getattr(self.methods, func, None)
-        #if not func:
-            #self.error(404) # file not found
-            #return
+        self.notify(simplejson.loads(self.request.body))
 
         self.response.headers.add_header("Content-Type", "application/json") 
         self.response.out.write("Success!")
+
+    def notify(self, schedule):
+        chrisSchedule = namesDictionary["chris"] + " - " + dayDictionary[schedule["chris"]]
+        nickSchedule = namesDictionary["nick"] + " - " + dayDictionary[schedule["nick"]]
+        steveSchedule = namesDictionary["steve"] + " - " + dayDictionary[schedule["steve"]]
+        zakSchedule = namesDictionary["zak"] + " - " + dayDictionary[schedule["zak"]]
+        
+        recipients = "Zak <zakvdm@gmail.com>, Zakagain <zak.vandermerwe@intecbilling.com>"
+
+        body = "The new shedule is:" + "\n  " + chrisSchedule + "\n  " + nickSchedule + "\n  " + steveSchedule + "\n  " + zakSchedule
+
+        logging.debug("Sending email message with body: " + body);
+
+        mail.send_mail(sender="Spagbol Roster <zakvdm@gmail.com>",
+                       to=recipients,
+                       subject="Spagbol Roster has been updated",
+                       body=body)
+
+        logging.info("Sent email notifications to: " + recipients);
 
 
 application = webapp.WSGIApplication(
