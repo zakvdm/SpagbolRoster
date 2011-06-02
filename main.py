@@ -16,18 +16,26 @@ from google.appengine.ext.webapp.util import run_wsgi_app
 
 namesDictionary = {"chris":"Chris De Kat", "nick":"n", "steve":"Chrevan", "zak":"iZak"}
 dayDictionary = {"monday":"Monday", "tuesday":"Tuesday", "wednesday":"Wednesday", "thursday":"Thursday", "friday":"Friday", "saturday":"Saturday", "sunday":"Sunday", "noday":"Not Cooking"}
+notificationRecipients = "Chris <chrisdk@gmail.com>, Nicholas <nicholas.savage@gmail.com>, Stephen <sasherson@gmail.com, Zak <zakvdm@gmail.com>"
 
 class Schedule(db.Model):
     json = db.StringProperty()
 
 class MainPage(webapp.RequestHandler):
     def get(self):
-        login_url = None
-        if not users.get_current_user():
-            login_url = users.create_login_url(self.request.uri)
+        if users.get_current_user():
+            url = users.create_logout_url(self.request.uri)
+            url_text = "logout"
+            user_status = "in"
+        else:
+            url = users.create_login_url(self.request.uri)
+            url_text = "login"
+            user_status = "out"
 
         template_values = {
-                 'login_url': login_url,
+                 'url': url,
+                 'url_text': url_text,
+                 'user_status': user_status,
              }
 
         path = os.path.join(os.path.dirname(__file__), 'index.html')
@@ -85,18 +93,16 @@ class SaveSchedule(webapp.RequestHandler):
         steveSchedule = namesDictionary["steve"] + " - " + dayDictionary[schedule["steve"]]
         zakSchedule = namesDictionary["zak"] + " - " + dayDictionary[schedule["zak"]]
         
-        recipients = "Zak <zakvdm@gmail.com>, Zakagain <zak.vandermerwe@intecbilling.com>"
-
         body = "The new shedule is:" + "\n  " + chrisSchedule + "\n  " + nickSchedule + "\n  " + steveSchedule + "\n  " + zakSchedule
 
         logging.debug("Sending email message with body: " + body);
 
         mail.send_mail(sender="Spagbol Roster <zakvdm@gmail.com>",
-                       to=recipients,
+                       to=notificationRecipients,
                        subject="Spagbol Roster has been updated",
                        body=body)
 
-        logging.info("Sent email notifications to: " + recipients);
+        logging.info("Sent email notifications to: " + notificationRecipients);
 
 
 application = webapp.WSGIApplication(
