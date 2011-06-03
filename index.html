@@ -94,6 +94,10 @@
                     onLoadMessage = "Log in to make changes to the schedule.";
                 }
 
+                $("#agnes-turn-progress").progressbar({
+                    value: {{ agnes_progress }}
+                });
+
                 function saveAndNotify() {
                     chrisElement = $( "#draggable-chris" );
                     chrisDay = chrisElement.parent()[0].id.split('-')[1]
@@ -192,6 +196,11 @@
 
             #message { float: right; width: 550px; height: 50px; font-size: 1.2em; }
 
+            #agnes-turn { float: left; margin: 1em 0 2em 1em; padding: 1em 1em 0.5em 1em; width: 200px; height: 100%; }
+            #agnes-turn h1 { text-align: left; margin-top: 0px; }
+            #agnes-turn-current { text-align: center; font-size: 1.2em; } 
+            #agnes-turn-next { text-align: right; font-size: 0.9em; margin: 0.5em 0.5em 0.2em 0.5em }
+
         </style>
 </head>
 <body>
@@ -212,6 +221,12 @@
       </ul>
       <div id="weekday-noday" class="ui-widget-content">Not Cooking</div>
       <div class="save"><button class="{{ user_status }}">Save & Notify</button></div>
+      <div id="agnes-turn" class="ui-widget-content ui-corner-all">
+        <h1 class="ui-widget"><strong>AGNES:</strong></h1>
+        <div id="agnes-turn-current" class="ui-widget"><strong>{{ agnes_turn }}</strong></div>
+        <div id="agnes-turn-progress"></div>
+        <div id="agnes-turn-next" class="ui-widget">Next: {{ next_agnes_turn }}</div>
+      </div>
       <div class="ui-widget">
         <div id="message" class="ui-state-highlight ui-corner-all" style="margin-top: 1em; padding: 0 .7em;"> 
           <p>
@@ -221,6 +236,7 @@
         </div>
       </div>
     </div>
+
 
     <div id="draggable-chris" class="draggable ui-widget-content ui-corner-all"><p>Chris</p></div>
     <div id="draggable-nick" class="draggable ui-widget-content ui-corner-all"><p>Nick</p></div>
