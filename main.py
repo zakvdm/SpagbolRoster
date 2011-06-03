@@ -61,8 +61,9 @@ class MainPage(webapp.RequestHandler):
     def agnesTurn(self):
         perk_count = Perk.all().count(1)
         if perk_count == 0:
-            initialPerk = Perk(start=date(2001, 1, 1), type=AGNES_PERK, owner=NOBODY)
-            initialPerk.put()
+            for i in range(0, 15):
+                initialPerk = Perk(start=date(2001, 1, 1), type=AGNES_PERK, owner=NOBODY)
+                initialPerk.put()
 
         today = date.today()
         perks = Perk.all().filter('start <=', today).order('-start').fetch(1)
