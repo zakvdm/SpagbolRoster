@@ -16,7 +16,7 @@ from google.appengine.ext.webapp.util import run_wsgi_app
 
 CHRIS, NICK, STEVE, ZAK, NOBODY = "chris", "nick", "steve", "zak", "nobody"
 
-namesDictionary = {CHRIS:"Chris", NICK:"Nick", STEVE:"Steve", ZAK:"Zak"}
+namesDictionary = {CHRIS:"Chris", NICK:"Nick", STEVE:"Steve", ZAK:"Zak", NOBODY:"Nobody"}
 dayDictionary = {"monday":"Monday", "tuesday":"Tuesday", "wednesday":"Wednesday", "thursday":"Thursday", "friday":"Friday", "saturday":"Saturday", "sunday":"Sunday", "noday":"Not Cooking"}
 notificationRecipients = "'Chris <chrisdk@gmail.com>', 'Nicholas <nicholas.savage@gmail.com>', 'Stephen <sasherson@gmail.com>', 'Zak <zakvdm@gmail.com>'"
 
