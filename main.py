@@ -81,9 +81,9 @@ class MainPage(webapp.RequestHandler):
         for coming_perk in coming_perks:
             next_agnes_turn = namesDictionary[coming_perk.owner]
             # Percent complete:
-            total_duration = (coming_perk.start - current_perk.start).total_seconds()
-            time_so_far = (today - current_perk.start).total_seconds()
-            progress = int((time_so_far / total_duration) * 100)
+            total_duration = (coming_perk.start - current_perk.start).days
+            time_so_far = (today - current_perk.start).days
+            progress = int((float(time_so_far) / total_duration) * 100)
             logging.info("Calculated Agnes progress: [total_duration = " + str(total_duration) + "][ time_so_far = " + str(time_so_far) + "][ progress = " + str(progress) + "]")
             break
 
