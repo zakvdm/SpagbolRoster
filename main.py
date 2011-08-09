@@ -15,6 +15,7 @@ from google.appengine.ext.webapp import template
 from google.appengine.ext.webapp.util import run_wsgi_app
 
 CHRIS, NICK, STEVE, ZAK, NOBODY = "chris", "nick", "steve", "zak", "nobody"
+REASON = "reason"
 
 namesDictionary = {CHRIS:"Chris", NICK:"Nick", STEVE:"Steve", ZAK:"Zak", NOBODY:"Nobody"}
 dayDictionary = {"monday":"Monday", "tuesday":"Tuesday", "wednesday":"Wednesday", "thursday":"Thursday", "friday":"Friday", "saturday":"Saturday", "sunday":"Sunday", "noday":"Not Cooking"}
@@ -141,17 +142,57 @@ class SaveSchedule(webapp.RequestHandler):
         nickSchedule = namesDictionary[NICK] + " - " + dayDictionary[schedule[NICK]]
         steveSchedule = namesDictionary[STEVE] + " - " + dayDictionary[schedule[STEVE]]
         zakSchedule = namesDictionary[ZAK] + " - " + dayDictionary[schedule[ZAK]]
+
+        reason = schedule[REASON]
         
-        body = "The new shedule is:" + "\n  " + chrisSchedule + "\n  " + nickSchedule + "\n  " + steveSchedule + "\n  " + zakSchedule + "\n\n ~ http://spagbolroster.appspot.com"
+        body = "The new shedule is:" + "\n  " + chrisSchedule + "\n  " + nickSchedule + "\n  " + steveSchedule + "\n  " + zakSchedule + "\n\n  " + reason + "\n\n~ http://spagbolroster.appspot.com"
 
-        logging.debug("Sending email message with body: " + body);
+        logging.debug("Standard email message body: " + body);
 
-        mail.send_mail(sender="Spagbol Roster <update@spagbolroster.appspotmail.com>",
-                       to=notificationRecipients,
-                       subject="Spagbol Roster has been updated",
-                       body=body)
+        message = mail.EmailMessage()
+
+        message.sender = users.get_current_user().email()
+        message.to = notificationRecipients
+        message.subject = "I've updated Spagbol Roster"
+        message.body = body
+
+
+        template_values = {
+                 'reason': reason,
+                 'schedule': self.sortByDay(schedule),
+             }
+
+        path = os.path.join(os.path.dirname(__file__), 'email.html')
+        message.html = template.render(path, template_values)
+
+        message.send()
 
         logging.info("Sent email notifications to: " + notificationRecipients);
+
+    def sortByDay(self, schedule):
+        daySchedule = {}
+
+        chrisDay = schedule[CHRIS]
+        nickDay = schedule[NICK]
+        steveDay = schedule[STEVE]
+        zakDay = schedule[ZAK]
+
+        daySchedule[chrisDay] = namesDictionary[CHRIS]
+        if daySchedule.has_key(nickDay):
+            daySchedule[nickDay] = daySchedule[nickDay] + "|" + namesDictionary[NICK]
+        else:
+            daySchedule[nickDay] = namesDictionary[NICK]
+        if daySchedule.has_key(steveDay):
+            daySchedule[steveDay] = daySchedule[steveDay] + "|" + namesDictionary[STEVE]
+        else:
+            daySchedule[steveDay] = namesDictionary[STEVE]
+        if daySchedule.has_key(zakDay):
+            daySchedule[zakDay] = daySchedule[zakDay] + "|" + namesDictionary[ZAK]
+        else:
+            daySchedule[zakDay] = namesDictionary[ZAK]
+
+        return daySchedule
+
 
 
 application = webapp.WSGIApplication(

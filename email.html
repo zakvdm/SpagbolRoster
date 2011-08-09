@@ -1,0 +1,40 @@
+<html>
+    <head></head>
+    <body>
+        <p id="schedule">
+            <table border="1">
+                <tr>
+                    <th>Monday</th>
+                    <th>Tuesday</th>
+                    <th>Wednesday</th>
+                    <th>Thursday</th>
+                    <th>Friday</th>
+                    <th>Saturday</th>
+                    <th>Sunday</th>
+                    <th>Not Cooking</th>
+                </tr>
+                <tr>
+                    <td>{{schedule.monday}}</td>
+                    <td>{{schedule.tuesday}}</td>
+                    <td>{{schedule.wednesday}}</td>
+                    <td>{{schedule.thursday}}</td>
+                    <td>{{schedule.friday}}</td>
+                    <td>{{schedule.saturday}}</td>
+                    <td>{{schedule.sunday}}</td>
+                    <td>{{schedule.noday}}</td>
+                </tr>
+            </table> 
+        </p>
+
+        {% if reason %}
+        <p>
+        <strong>I have my reasons:</strong>
+        {{ reason }}
+        </p>
+        {% endif %}
+
+        <p>
+        ~ http://spagbolroster.appspot.com
+        </p>
+    </body>
+</html>

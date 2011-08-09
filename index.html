@@ -15,6 +15,21 @@
                 var messageElement = $( "#message" );
                 messageElement.hide();
 
+                /* Initialize the Reason input field */
+                $(function() {
+                        var availableReasons = [
+                            "I'm not feeling well",
+                            "I've swapped nights with someone",
+                            "Too many public holidays this week",
+                            "No one home",
+                            "I found Jesus"
+                        ];
+                        $( "#reason" ).autocomplete({
+                            source: availableReasons
+                        });
+                    });
+                /* *********************** */
+
                 assignAllCooksToNoDay();
 
                 loadCookingDaysFromServer();
@@ -108,7 +123,9 @@
                     zakElement = $( "#draggable-zak" );
                     zakDay = zakElement.parent()[0].id.split('-')[1]
 
-                    dataObj = { "chris":chrisDay, "nick":nickDay, "steve":steveDay, "zak":zakDay };
+                    reason = $( "#reason" )[0].value
+
+                    dataObj = { "chris":chrisDay, "nick":nickDay, "steve":steveDay, "zak":zakDay, "reason":reason };
 
                     $.ajax({
                         type: 'PUT',
@@ -181,18 +198,21 @@
 
             #weekday-noday { float: left; width: 150px; height: 250px; padding: 0.4em; margin: 1em 0.4em 0.4em 0; text-align: center; }
 
+            #draggable-chris { background: LightSalmon; color: #222; }
+            #draggable-nick { background: PaleVioletRed; color: #222; }
+            #draggable-steve { background: DeepSkyBlue; color: #222; }
+            #draggable-zak { background: #0dd; color: #222; }
             /*
-            #draggable-chris { background: LightSalmon }
-            #draggable-nick { background: PaleVioletRed }
-            #draggable-steve { background: DeepSkyBlue }
-            #draggable-zak { background: #0dd }
-            */
             #draggable-chris { background: #BBD6FA; color: Snow; }
             #draggable-nick { background: #77975F; color: Snow; }
             #draggable-steve { background: #AB9F86; color: Snow; }
             #draggable-zak { background: #7A3838; color: Snow; }
+            */
 
-            button { float: right; width: 200px; height: 30px; margin: 1em 0 2em 1em; }
+            .save { float: right; margin: 1em 0 2em 1em; padding: 0em 1em 0.5em 1em; width: 300px; height: 100%; }
+            /*#button { float: right; width: 200px; height: 30px; margin: 1em 0 2em 1em; }*/
+            input { width: 280px; float: right; margin: 0em 0em 0em 0em; }
+            button { height: 30px; float: right; width: 180px; margin: 0.5em 0 .2em 1em; }
 
             #message { float: right; width: 550px; height: 50px; font-size: 1.2em; }
 
@@ -220,7 +240,11 @@
         <li id="weekday-sunday" class="droppable ui-widget-content">Sunday</li>
       </ul>
       <div id="weekday-noday" class="ui-widget-content">Not Cooking</div>
-      <div class="save"><button class="{{ user_status }}">Save & Notify</button></div>
+      <div class="save ui-widget-content ui-corner-all">
+              <h1 class="ui-widget">Comment:</h1>
+              <input id="reason" placeholder="I'm feeling lazy" />
+              <button class="{{ user_status }} ui-button">Save & Notify</button>
+      </div>
       <div id="agnes-turn" class="ui-widget-content ui-corner-all">
         <h1 class="ui-widget"><strong>AGNES:</strong></h1>
         <div id="agnes-turn-current" class="ui-widget"><strong>{{ agnes_turn }}</strong></div>
