@@ -32,28 +32,9 @@
 
                 assignAllCooksToNoDay();
 
-                loadCookingDaysFromServer();
+                loadScheduleFromServer();
                 /* *********************** */
 
-
-                $( "div[id^='draggable']" ).draggable({ helper: "clone" , cursor: "move" });
-
-                $( "#weekday-monday" ).droppable({ drop: handleDrop,
-                                                   hoverClass: "ui-state-active" });
-                $( "#weekday-tuesday" ).droppable({ drop: handleDrop,
-                                                   hoverClass: "ui-state-active" });
-                $( "#weekday-wednesday" ).droppable({ drop: handleDrop,
-                                                   hoverClass: "ui-state-active" });
-                $( "#weekday-thursday" ).droppable({ drop: handleDrop,
-                                                   hoverClass: "ui-state-active" });
-                $( "#weekday-friday" ).droppable({ drop: handleDrop,
-                                                   hoverClass: "ui-state-active" });
-                $( "#weekday-saturday" ).droppable({ drop: handleDrop,
-                                                   hoverClass: "ui-state-active" });
-                $( "#weekday-sunday" ).droppable({ drop: handleDrop,
-                                                   hoverClass: "ui-state-active" });
-                $( "#weekday-noday" ).droppable({ drop: handleDrop,
-                                                   hoverClass: "ui-state-active" });
 
                 function handleDrop( event, ui ) {
                     //Get Details of dragged and dropped
@@ -68,11 +49,16 @@
                     cooks = $( "div[id^='draggable']" );
 
                     $.each(cooks, function(index) {
-                        assignCookToDay( "noday", $(this) );
+                        $(this).detach().css({top: 0, left: 0}).appendTo($( "#weekday-noday" ));
+                    })
+
+                    nextWeekCooks = $( "div[id^='draggable-next']" );
+                    $.each(nextWeekCooks, function(index) {
+                        $(this).detach().css({top: 0, left: 0}).appendTo($( "#weekday-next-noday" ));
                     })
                 }
 
-                function loadCookingDaysFromServer() {
+                function loadScheduleFromServer() {
                     $.ajax({
                         type: 'GET',
                         url: "/loadSchedule",
@@ -82,22 +68,19 @@
                                 if (data == null) {
                                     data = json;
                                 }
-
-                                $.each(data, function(key, val) {
-                                       cook = key
-                                       day = val
-                                       assignCookToDay(day, $( "#draggable-" + cook ) );
-                                   });
+                                assignCooksToDays( data.thisweek, "#weekday-", "#draggable-");
+                                assignCooksToDays( data.nextweek, "#weekday-next-", "#draggable-next-");
 
                                 showMessage("info", onLoadMessage);
                              }
                      });
                 }
 
-                function assignCookToDay( day, cookElement ) {
-                    var dayElement = $( "#weekday-" + day );
-
-                    cookElement.detach().css({top: 0, left: 0}).appendTo(dayElement);
+                function assignCooksToDays( schedule, dayElementPrefix, cookElementPrefix ) {
+                    $( cookElementPrefix + "chris" ).detach().css({top: 0, left: 0}).appendTo($( dayElementPrefix + schedule.chris ));
+                    $( cookElementPrefix + "nick" ).detach().css({top: 0, left: 0}).appendTo($( dayElementPrefix + schedule.nick ));
+                    $( cookElementPrefix + "steve" ).detach().css({top: 0, left: 0}).appendTo($( dayElementPrefix + schedule.steve ));
+                    $( cookElementPrefix + "zak" ).detach().css({top: 0, left: 0}).appendTo($( dayElementPrefix + schedule.zak ));
                 }
 
                 onLoadMessage = "<b>Schedule loaded</b>. Drag the names around and click <b>Save & Notify</b> to change it.";
@@ -107,6 +90,32 @@
                 if (saveButton.hasClass( "out" )) { // User is logged out
                     saveButton.hide();
                     onLoadMessage = "Log in to make changes to the schedule.";
+                }
+
+                if (saveButton.hasClass( "in" )) { // User is logged in
+                    //$( "div[id^='draggable']" ).draggable({ helper: "clone" , cursor: "move" });
+                    $( "div[id^='draggable']" ).draggable({ helper: "clone" });
+                    $( "div[id^='draggable']" ).css({cursor: "move"});
+
+                    $( "#weekday-monday" ).droppable({ drop: handleDrop, hoverClass: "ui-state-active", accept: ".thisweek" });
+                    $( "#weekday-tuesday" ).droppable({ drop: handleDrop, hoverClass: "ui-state-active", accept: ".thisweek" });
+                    $( "#weekday-wednesday" ).droppable({ drop: handleDrop, hoverClass: "ui-state-active", accept: ".thisweek" });
+                    $( "#weekday-thursday" ).droppable({ drop: handleDrop, hoverClass: "ui-state-active", accept: ".thisweek" });
+                    $( "#weekday-friday" ).droppable({ drop: handleDrop, hoverClass: "ui-state-active", accept: ".thisweek" });
+                    $( "#weekday-saturday" ).droppable({ drop: handleDrop, hoverClass: "ui-state-active", accept: ".thisweek" });
+                    $( "#weekday-sunday" ).droppable({ drop: handleDrop, hoverClass: "ui-state-active", accept: ".thisweek" });
+                    $( "#weekday-noday" ).droppable({ drop: handleDrop, hoverClass: "ui-state-active", accept: ".thisweek" });
+                    $( "#weekday-skipping" ).droppable({ drop: handleDrop, hoverClass: "ui-state-active", accept: ".thisweek" });
+
+                    $( "#weekday-next-monday" ).droppable({ drop: handleDrop, hoverClass: "ui-state-active", accept: ".nextweek" });
+                    $( "#weekday-next-tuesday" ).droppable({ drop: handleDrop, hoverClass: "ui-state-active", accept: ".nextweek" });
+                    $( "#weekday-next-wednesday" ).droppable({ drop: handleDrop, hoverClass: "ui-state-active", accept: ".nextweek" });
+                    $( "#weekday-next-thursday" ).droppable({ drop: handleDrop, hoverClass: "ui-state-active", accept: ".nextweek" });
+                    $( "#weekday-next-friday" ).droppable({ drop: handleDrop, hoverClass: "ui-state-active", accept: ".nextweek" });
+                    $( "#weekday-next-saturday" ).droppable({ drop: handleDrop, hoverClass: "ui-state-active", accept: ".nextweek" });
+                    $( "#weekday-next-sunday" ).droppable({ drop: handleDrop, hoverClass: "ui-state-active", accept: ".nextweek" });
+                    $( "#weekday-next-noday" ).droppable({ drop: handleDrop, hoverClass: "ui-state-active", accept: ".nextweek" });
+                    $( "#weekday-next-skipping" ).droppable({ drop: handleDrop, hoverClass: "ui-state-active", accept: ".nextweek" });
                 }
 
                 $("#agnes-turn-progress").progressbar({
@@ -125,12 +134,23 @@
 
                     reason = $( "#reason" )[0].value
 
-                    dataObj = { "chris":chrisDay, "nick":nickDay, "steve":steveDay, "zak":zakDay, "reason":reason };
+                    thisWeekSchedule = { "chris":chrisDay, "nick":nickDay, "steve":steveDay, "zak":zakDay };
+
+                    nextChrisElement = $( "#draggable-next-chris" );
+                    nextChrisDay = nextChrisElement.parent()[0].id.split('-')[2]
+                    nextNickElement = $( "#draggable-next-nick" );
+                    nextNickDay = nextNickElement.parent()[0].id.split('-')[2]
+                    nextSteveElement = $( "#draggable-next-steve" );
+                    nextSteveDay = nextSteveElement.parent()[0].id.split('-')[2]
+                    nextZakElement = $( "#draggable-next-zak" );
+                    nextZakDay = nextZakElement.parent()[0].id.split('-')[2]
+
+                    nextWeekSchedule = { "chris":nextChrisDay, "nick":nextNickDay, "steve":nextSteveDay, "zak":nextZakDay };
 
                     $.ajax({
                         type: 'PUT',
                         url: "/saveSchedule",
-                        data: JSON.stringify(dataObj),
+                        data: JSON.stringify({"reason":reason, "thisweek":thisWeekSchedule, "nextweek":nextWeekSchedule}),
                         contentType: "application/json",
                         success: saveSuccessCallback,
                         complete: function() { 
@@ -185,18 +205,29 @@
               color: #304F80;
             }
 
-            #container { width: 810px; }
-            #header { width: 810px; height: 60px; }
+            #container { width: 1110px; }
+            #header { width: 1110px; height: 60px; }
             #header span { margin-left: 80px; }
             #header a { float: right; margin-top: 40px; margin-right: 20px; font-size: 1.2em }
 
             /* Droppable */
-            .draggable { width: 90px; height: 30px; padding: 0.5em; text-align: center; float: left; cursor: move; margin: 10px 10px 10px 0; font-size: 1em; }
+            .draggable { background: White; width: 90px; height: 30px; padding: 0.5em; text-align: center; float: left;  margin: 10px 10px -40px 0; font-size: 1em; }
 
-            #weekdays { float: left; width: 100%; min-height: 12em; } * html #gallery { height: 12em; } /* IE6 */
-            .weekdays li { float: left; width: 100px; height: 150px; padding: 0.4em; margin: 0 0.4em 0.4em 0; text-align: center; }
+            .week-name { margin: 1em 0 0 0 }
 
-            #weekday-noday { float: left; width: 150px; height: 250px; padding: 0.4em; margin: 1em 0.4em 0.4em 0; text-align: center; }
+            #weekdays { float: none; width: 100%; min-height: 10em; } * html #gallery { height: 10em; } /* IE6 */
+            .weekdays li { float: left; width: 100px; height: 100px; padding: 0.4em; margin: 0 0.4em 0.4em 0; text-align: center; }
+
+            #weekday-noday { float: right; margin: 0 0 0.4em 0.4em }
+            #weekday-skipping { float: right; margin: 0 0 0.4em 0.4em }
+
+            .this-week { border: 1px solid DarkOrange; }
+
+            #weekdays-next { float: none; width: 100%; min-height: 10em; } * html #gallery { height: 10em; } /* IE6 */
+            .weekdays-next li { float: left; width: 100px; height: 200px; padding: 0.4em; margin: 0 0.4em 0.4em 0; text-align: center; }
+
+            #weekday-next-noday { float: right; margin: 0 0 0.4em 0.4em }
+            #weekday-next-skipping { float: right; margin: 0 0 0.4em 0.4em }
 
             #draggable-chris { background: LightSalmon; color: #222; }
             #draggable-nick { background: PaleVioletRed; color: #222; }
@@ -209,14 +240,14 @@
             #draggable-zak { background: #7A3838; color: Snow; }
             */
 
-            .save { float: right; margin: 1em 0 2em 1em; padding: 0em 1em 0.5em 1em; width: 300px; height: 100%; }
+            .save { float: right; margin: 0.4em 0 2em 1em; padding: 0em 1em 0.5em 1em; width: 300px; height: 100%; }
             /*#button { float: right; width: 200px; height: 30px; margin: 1em 0 2em 1em; }*/
             input { width: 280px; float: right; margin: 0em 0em 0em 0em; }
             button { height: 30px; float: right; width: 180px; margin: 0.5em 0 .2em 1em; }
 
-            #message { float: right; width: 550px; height: 50px; font-size: 1.2em; }
+            #message { float: none; width: 800px; height: 50px; font-size: 1.2em; margin: 0.5em auto 0.5em auto }
 
-            #agnes-turn { float: left; margin: 1em 0 2em 1em; padding: 1em 1em 0.5em 1em; width: 200px; height: 100%; }
+            #agnes-turn { float: left; margin: 0.4em 0 0 0; padding: 1em 1em 0.5em 1em; width: 200px; height: 100%; }
             #agnes-turn h1 { text-align: left; margin-top: 0px; }
             #agnes-turn-current { text-align: center; font-size: 1.2em; } 
             #agnes-turn-next { text-align: right; font-size: 0.9em; margin: 0.5em 0.5em 0.2em 0.5em }
@@ -230,16 +261,38 @@
     </div>
 
     <div id="container" class="ui-widget ui-helper-clearfix">
+      <p class="week-name">This Week:</p>
       <ul id="weekdays" class="weekdays ui-helper-reset ui-helper-clearfix">
-        <li id="weekday-monday" class="droppable ui-widget-content">Monday</li>
-        <li id="weekday-tuesday" class="droppable ui-widget-content">Tuesday</li>
-        <li id="weekday-wednesday" class="droppable ui-widget-content">Wednesday</li>
-        <li id="weekday-thursday" class="droppable ui-widget-content">Thursday</li>
-        <li id="weekday-friday" class="droppable ui-widget-content">Friday</li>
-        <li id="weekday-saturday" class="droppable ui-widget-content">Saturday</li>
-        <li id="weekday-sunday" class="droppable ui-widget-content">Sunday</li>
+        <li id="weekday-monday" class="droppable ui-widget-content this-week">Monday</li>
+        <li id="weekday-tuesday" class="droppable ui-widget-content this-week">Tuesday</li>
+        <li id="weekday-wednesday" class="droppable ui-widget-content this-week">Wednesday</li>
+        <li id="weekday-thursday" class="droppable ui-widget-content this-week">Thursday</li>
+        <li id="weekday-friday" class="droppable ui-widget-content this-week">Friday</li>
+        <li id="weekday-saturday" class="droppable ui-widget-content this-week">Saturday</li>
+        <li id="weekday-sunday" class="droppable ui-widget-content this-week">Sunday</li>
+        <li id="weekday-skipping" class="ui-widget-content this-week">Using Skip</li>
+        <li id="weekday-noday" class="ui-widget-content this-week">Not Cooking</li>
       </ul>
-      <div id="weekday-noday" class="ui-widget-content">Not Cooking</div>
+      <div class="ui-widget">
+        <div id="message" class="ui-state-highlight ui-corner-all" style="margin-top: 1em; padding: 0 .7em;"> 
+          <p>
+            <span class="ui-icon ui-icon-info" style="float: left; margin-right: .3em;"></span>
+            <span id="message-text">Don't forget to click save & notify when you're happy.</span>
+          </p>
+        </div>
+      </div>
+      <p class="week-name">Next Week:</p>
+      <ul id="weekdays-next" class="weekdays ui-helper-reset ui-helper-clearfix">
+        <li id="weekday-next-monday" class="droppable ui-widget-content">Next Monday</li>
+        <li id="weekday-next-tuesday" class="droppable ui-widget-content">Next Tuesday</li>
+        <li id="weekday-next-wednesday" class="droppable ui-widget-content">Next Wednesday</li>
+        <li id="weekday-next-thursday" class="droppable ui-widget-content">Next Thursday</li>
+        <li id="weekday-next-friday" class="droppable ui-widget-content">Next Friday</li>
+        <li id="weekday-next-saturday" class="droppable ui-widget-content">Next Saturday</li>
+        <li id="weekday-next-sunday" class="droppable ui-widget-content">Next Sunday</li>
+        <li id="weekday-next-skipping" class="droppable ui-widget-content">Using Skip</li>
+        <li id="weekday-next-noday" class="droppable ui-widget-content">Not Cooking</li>
+      </ul>
       <div class="save ui-widget-content ui-corner-all">
               <h1 class="ui-widget">Comment:</h1>
               <input id="reason" placeholder="I'm feeling lazy" />
@@ -251,22 +304,18 @@
         <div id="agnes-turn-progress"></div>
         <div id="agnes-turn-next" class="ui-widget">Next: {{ next_agnes_turn }}</div>
       </div>
-      <div class="ui-widget">
-        <div id="message" class="ui-state-highlight ui-corner-all" style="margin-top: 1em; padding: 0 .7em;"> 
-          <p>
-            <span class="ui-icon ui-icon-info" style="float: left; margin-right: .3em;"></span>
-            <span id="message-text">Don't forget to click save & notify when you're happy.</span>
-          </p>
-        </div>
-      </div>
     </div>
 
 
-    <div id="draggable-chris" class="draggable ui-widget-content ui-corner-all"><p>Chris</p></div>
-    <div id="draggable-nick" class="draggable ui-widget-content ui-corner-all"><p>Nick</p></div>
-    <div id="draggable-steve" class="draggable ui-widget-content ui-corner-all"><p>Steve</p></div>
-    <div id="draggable-zak" class="draggable ui-widget-content ui-corner-all"><p>Zak</p></div>
+    <div id="draggable-chris" class="draggable ui-widget-content ui-corner-all thisweek"><p>Chris</p></div>
+    <div id="draggable-nick" class="draggable ui-widget-content ui-corner-all thisweek"><p>Nick</p></div>
+    <div id="draggable-steve" class="draggable ui-widget-content ui-corner-all thisweek"><p>Steve</p></div>
+    <div id="draggable-zak" class="draggable ui-widget-content ui-corner-all thisweek"><p>Zak</p></div>
 
+    <div id="draggable-next-chris" class="draggable ui-widget-content ui-corner-all nextweek"><p>Chris</p></div>
+    <div id="draggable-next-nick" class="draggable ui-widget-content ui-corner-all nextweek"><p>Nick</p></div>
+    <div id="draggable-next-steve" class="draggable ui-widget-content ui-corner-all nextweek"><p>Steve</p></div>
+    <div id="draggable-next-zak" class="draggable ui-widget-content ui-corner-all nextweek"><p>Zak</p></div>
     </body>
 </html>
 

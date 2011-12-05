@@ -1,11 +1,12 @@
 import os
 import cgi
 from datetime import date
+from datetime import timedelta
 import urllib
 import logging
 import wsgiref.handlers
 
-from django.utils import simplejson
+import json
 
 from google.appengine.api import mail
 from google.appengine.api import users
@@ -15,10 +16,12 @@ from google.appengine.ext.webapp import template
 from google.appengine.ext.webapp.util import run_wsgi_app
 
 CHRIS, NICK, STEVE, ZAK, NOBODY = "chris", "nick", "steve", "zak", "nobody"
+MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY, NODAY, SKIPPING = "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday", "noday", "skipping"
+COOKING_OPTIONS = [MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY, NODAY, SKIPPING]
 REASON = "reason"
 
 namesDictionary = {CHRIS:"Chris", NICK:"Nick", STEVE:"Steve", ZAK:"Zak", NOBODY:"Nobody"}
-dayDictionary = {"monday":"Monday", "tuesday":"Tuesday", "wednesday":"Wednesday", "thursday":"Thursday", "friday":"Friday", "saturday":"Saturday", "sunday":"Sunday", "noday":"Not Cooking"}
+dayDictionary = {MONDAY:"Monday", TUESDAY:"Tuesday", WEDNESDAY:"Wednesday", THURSDAY:"Thursday", FRIDAY:"Friday", SATURDAY:"Saturday", SUNDAY:"Sunday", NODAY:"Not Cooking", SKIPPING:"Skipping"}
 notificationRecipients = "'Chris <chrisdk@gmail.com>', 'Nicholas <nicholas.savage@gmail.com>', 'Stephen <sasherson@gmail.com>', 'Zak <zakvdm@gmail.com>'"
 
 AGNES_PERK = "AGNES"
@@ -27,11 +30,33 @@ AGNES_PERK = "AGNES"
 class Schedule(db.Model):
     json = db.StringProperty()
 
+class Week(db.Model):
+    start = db.DateProperty(required=True)
+    chris = db.StringProperty(required=True, choices=set(COOKING_OPTIONS))
+    nick = db.StringProperty(required=True, choices=set(COOKING_OPTIONS))
+    steve = db.StringProperty(required=True, choices=set(COOKING_OPTIONS))
+    zak = db.StringProperty(required=True, choices=set(COOKING_OPTIONS))
+
 class Perk(db.Model):
     start = db.DateProperty(required=True)
     type = db.StringProperty(required=True, choices=set([AGNES_PERK]))
     owner = db.StringProperty(required=True, choices=set([CHRIS, NICK, STEVE, ZAK, NOBODY]))
 
+# HELPER METHODS:
+def getWeekStarts():
+    today = date.today()
+    days_since_monday = timedelta(days=today.weekday())
+    this_week = today - days_since_monday
+    next_week = this_week + timedelta(days=7)
+    logging.debug("Start of week is: " + str(this_week))
+    return this_week, next_week
+
+def getOrInsertWeekByStartDate(week_start): 
+    # Prefix key:
+    key_name = 'week:' + str(week_start.year) + "-" + str(week_start.month) + "-" + str(week_start.day)
+    return Week.get_or_insert(key_name, start=week_start, chris=NODAY, nick=NODAY, steve=NODAY, zak=NODAY)
+
+        
 # REQUEST HANDLERS:
 class MainPage(webapp.RequestHandler):
     def get(self):
@@ -93,18 +118,22 @@ class MainPage(webapp.RequestHandler):
 
 class LoadSchedule(webapp.RequestHandler):
     def get(self):
-        schedule_query = Schedule.all() #.ancestor(cook_key('househusbands'))
-        schedules = schedule_query.fetch(1)
+        this_week_start_date, next_week_start_date = getWeekStarts()
 
-        if len(schedules) == 0:
-            scheduleJson = "{ \"chris\":\"monday\",\"nick\":\"thursday\",\"steve\":\"tuesday\",\"zak\":\"wednesday\"}"
-            logging.info("Loading default schedule: " + scheduleJson);
-        else:
-            scheduleJson = simplejson.loads(schedules[0].json)
-            logging.info("Loading persisted schedule: " + scheduleJson);
-        
-        self.response.headers.add_header("Content-Type", "application/json") 
-        self.response.out.write(scheduleJson)
+        this_week = getOrInsertWeekByStartDate(this_week_start_date)
+        next_week = getOrInsertWeekByStartDate(next_week_start_date)
+
+        this_week_schedule = { "start":this_week_start_date, CHRIS:this_week.chris, NICK:this_week.nick, STEVE:this_week.steve, ZAK:this_week.zak }
+        next_week_schedule = { "start":next_week_start_date, CHRIS:next_week.chris, NICK:next_week.nick, STEVE:next_week.steve, ZAK:next_week.zak }
+
+        logging.info("This week's schedule: " + str(this_week_schedule))
+        logging.info("Next week's schedule: " + str(next_week_schedule))
+
+        self.response.headers.add_header("Content-Type", "application/json")
+        dthandler = lambda obj: obj.isoformat() if isinstance(obj, date) else None
+        result = json.dumps({"thisweek":this_week_schedule, "nextweek":next_week_schedule}, default=dthandler)
+        logging.debug(result)
+        self.response.out.write(result)
 
 class SaveSchedule(webapp.RequestHandler):
 
@@ -116,35 +145,39 @@ class SaveSchedule(webapp.RequestHandler):
 
         logging.info("Received save request: " + self.request.body);
 
-        schedule_query = Schedule.all() #.ancestor(cook_key('househusbands'))
-        schedules = schedule_query.fetch(1)
+        this_week_start_date, next_week_start_date = getWeekStarts()
 
-        if len(schedules) == 0:
-            #key = cook_key('househusbands')
-            schedule = Schedule()
-            schedule.json = simplejson.dumps(self.request.body)
-            schedule.put()
-            logging.info("Persisted schedule for the first time");
-        else:
-            schedule = schedules[0]
-            schedule.json = simplejson.dumps(self.request.body)
-            schedule.put()
-            logging.info("Updated schedule");
+        this_week = getOrInsertWeekByStartDate(this_week_start_date)
+        next_week = getOrInsertWeekByStartDate(next_week_start_date)
 
+        new_schedule = json.loads(self.request.body)
 
-        self.notify(simplejson.loads(self.request.body))
+        this_week.chris = new_schedule["thisweek"][CHRIS]
+        this_week.nick = new_schedule["thisweek"][NICK]
+        this_week.steve = new_schedule["thisweek"][STEVE]
+        this_week.zak = new_schedule["thisweek"][ZAK]
+
+        next_week.chris = new_schedule["nextweek"][CHRIS]
+        next_week.nick = new_schedule["nextweek"][NICK]
+        next_week.steve = new_schedule["nextweek"][STEVE]
+        next_week.zak = new_schedule["nextweek"][ZAK]
+
+        this_week.put()
+        next_week.put()
+
+        logging.info("updated schedule");
+
+        self.notify(new_schedule["thisweek"], new_schedule["reason"])
 
         self.response.headers.add_header("Content-Type", "application/json") 
         self.response.out.write("{}")
 
-    def notify(self, schedule):
+    def notify(self, schedule, reason):
         chrisSchedule = namesDictionary[CHRIS] + " - " + dayDictionary[schedule[CHRIS]]
         nickSchedule = namesDictionary[NICK] + " - " + dayDictionary[schedule[NICK]]
         steveSchedule = namesDictionary[STEVE] + " - " + dayDictionary[schedule[STEVE]]
         zakSchedule = namesDictionary[ZAK] + " - " + dayDictionary[schedule[ZAK]]
 
-        reason = schedule[REASON]
-        
         body = "The new shedule is:" + "\n  " + chrisSchedule + "\n  " + nickSchedule + "\n  " + steveSchedule + "\n  " + zakSchedule + "\n\n  " + reason + "\n\n~ http://spagbolroster.appspot.com"
 
         logging.debug("Standard email message body: " + body);
@@ -201,9 +234,9 @@ application = webapp.WSGIApplication(
                                       ('/saveSchedule', SaveSchedule)],
                                      debug=True)
 
-def main():
-    run_wsgi_app(application)
+#def main():
+    #run_wsgi_app(application)
 
-if __name__ == "__main__":
-    main()
+#if __name__ == "__main__":
+    #main()
 
