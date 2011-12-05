@@ -15,6 +15,8 @@ from google.appengine.ext import webapp
 from google.appengine.ext.webapp import template
 from google.appengine.ext.webapp.util import run_wsgi_app
 
+TOTAL_SKIPS = 3;
+
 CHRIS, NICK, STEVE, ZAK, NOBODY = "chris", "nick", "steve", "zak", "nobody"
 MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY, NODAY, SKIPPING = "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday", "noday", "skipping"
 COOKING_OPTIONS = [MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY, NODAY, SKIPPING]
@@ -255,16 +257,127 @@ class ScheduleHandler(webapp.RequestHandler):
         return daySchedule
 
 
+class SkipHandler(webapp.RequestHandler):
+
+    def get(self):
+        result = self.getSkipStatusForAllCooks()
+
+        self.response.headers.add_header("Content-Type", "application/json") 
+        self.response.out.write(simplejson.dumps(result))
+
+    def getSkipStatusForAllCooks(self):
+        chris_skipping_this_week, chris_skips_left = self.getSkipStatus(CHRIS)
+        nick_skipping_this_week, nick_skips_left = self.getSkipStatus(NICK)
+        steve_skipping_this_week, steve_skips_left = self.getSkipStatus(STEVE)
+        zak_skipping_this_week, zak_skips_left = self.getSkipStatus(ZAK)
+
+        skip_status = { "chris": {"skipping":chris_skipping_this_week, "skips":chris_skips_left},
+                "nick": {"skipping":nick_skipping_this_week, "skips":nick_skips_left},
+                "steve": {"skipping":steve_skipping_this_week, "skips":steve_skips_left},
+                "zak": {"skipping":zak_skipping_this_week, "skips":zak_skips_left}
+                 }
+
+        logging.info("Calculated and Returning skipping info: " + simplejson.dumps(skip_status))
+
+        return skip_status
+
+
+    def getSkipStatus(self, cook):
+        logging.info("Getting skip status for " + cook)
+        skipping_this_week = False
+
+        week_start = self.getStartOfWeek()
+
+        skips = db.GqlQuery("SELECT * "
+                                "FROM Perk "
+                                "WHERE type = :1 AND owner = :2 "
+                                "ORDER BY start DESC",
+                                SKIP_PERK, cook)
+
+        skip_count = skips.count()
+        if skip_count > 0:
+            for skip in skips:
+                logging.info(skip.start)
+
+        if skip_count > 0 and skips[0].start > week_start:
+            logging.info("skipping!")
+            skipping_this_week = True
+
+        skips_left = TOTAL_SKIPS - skip_count
+
+        return skipping_this_week, skips_left
+
+    def getStartOfWeek(self):
+        week = timedelta(days=7)
+        start_date = date.today() - week
+        logging.debug("Start of week: " + str(start_date))
+        return start_date
+
+
+    def put(self):
+        # Check that the request was made by a house husbands
+        if not users.is_current_user_admin():
+            self.error(403) # access denied
+            return
+
+        logging.info("Received skip request: " + self.request.body);
+
+        request = simplejson.loads(self.request.body)
+
+        if request["skip"]:
+            skip = Perk(owner=emailDictionary[users.get_current_user().email()], start=date.today(), type=SKIP_PERK)
+            skip.put()
+            logging.info("Added skip for User: " + users.get_current_user().email());
+        else:
+            logging.error("Should delete skip!")
+            #schedule = schedules[0]
+            #schedule.json = simplejson.dumps(self.request.body)
+            #schedule.put()
+            #logging.info("Updated schedule");
+
+        #self.notify(simplejson.loads(self.request.body))
+
+        result = self.getSkipStatusForAllCooks()
+
+        self.response.headers.add_header("Content-Type", "application/json") 
+        self.response.out.write(simplejson.dumps(result))
+
+    def notify(self, schedule):
+        chrisSchedule = namesDictionary[CHRIS] + " - " + dayDictionary[schedule[CHRIS]]
+        nickSchedule = namesDictionary[NICK] + " - " + dayDictionary[schedule[NICK]]
+        steveSchedule = namesDictionary[STEVE] + " - " + dayDictionary[schedule[STEVE]]
+        zakSchedule = namesDictionary[ZAK] + " - " + dayDictionary[schedule[ZAK]]
+
+        reason = schedule[REASON]
+        
+        body = "The new shedule is:" + "\n  " + chrisSchedule + "\n  " + nickSchedule + "\n  " + steveSchedule + "\n  " + zakSchedule + "\n\n  " + reason + "\n\n~ http://spagbolroster.appspot.com"
+
+        logging.debug("Standard email message body: " + body);
+
+        message = mail.EmailMessage()
+
+        message.sender = users.get_current_user().email()
+        message.to = notificationRecipients
+        message.subject = "I've updated Spagbol Roster"
+        message.body = body
+
+
+        template_values = {
+                 'reason': reason,
+                 'schedule': self.sortByDay(schedule),
+             }
+
+        path = os.path.join(os.path.dirname(__file__), 'email.html')
+        message.html = template.render(path, template_values)
+
+        message.send()
+
+        logging.info("Sent email notifications to: " + notificationRecipients);
+
 
 
 application = webapp.WSGIApplication(
                                      [('/', MainPage),
                                       ('/schedule', ScheduleHandler)],
                                      debug=True)
-
-#def main():
-    #run_wsgi_app(application)
-
-#if __name__ == "__main__":
-    #main()
 

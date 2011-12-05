@@ -100,15 +100,26 @@
 
                 function assignSkipsToCooks( skips ) {
                     skipsLeft = skips
-                    $( "#draggable-chris" ).text(skips.chris)
-                    $( "#draggable-nick" ).text(skips.nick)
-                    $( "#draggable-steve" ).text(skips.steve)
-                    $( "#draggable-zak" ).text(skips.zak)
+                    $( "#draggable-chris #skips-remaining" ).text(skips.chris)
+                    $( "#draggable-nick #skips-remaining" ).text(skips.nick)
+                    $( "#draggable-steve #skips-remaining" ).text(skips.steve)
+                    $( "#draggable-zak #skips-remaining" ).text(skips.zak)
                 }
 
+                function updateCookSkipStatus( skippingThisWeek, skipsLeft, cookElement ) {
+
+                    if (skippingThisWeek) {
+                        // Change look so it's clear who is skipping.
+                        cookElement.addClass("skipping");
+                    }
+
+                    $("#skips-remaining", cookElement).text(skipsLeft);
+                }
+
+                /* INITIALIZE BUTTONS */
                 onLoadMessage = "<b>Schedule loaded</b>. Drag the names around and click <b>Save & Notify</b> to change it.";
                 var saveButton = $( ".save button:first" ).button({
-                                             icons: { primary: "ui-icon-gear" }
+                                             icons: { primary: "ui-icon-disk" }
                                                  }).click(saveAndNotify);
                 if (saveButton.hasClass( "out" )) { // User is logged out
                     saveButton.hide();
@@ -182,6 +193,62 @@
                         });
                 }
 
+                function skipWeek() {
+                    skipRequestBody = { "skip": true }
+                    $.ajax({
+                        type: 'PUT',
+                        url: "/skips",
+                        data: JSON.stringify(skipRequestBody),
+                        contentType: "application/json",
+                        success: skipWeekSuccessCallback,
+                        complete: function() { 
+                            },
+                        error: skipWeekErrorHandler,
+                        });
+                }
+
+                function skipWeekSuccessCallback() {
+                    // UPDATE REMAINING SKIPS HERE:
+
+                    showMessage("info", "<b>Success!</b> You're off the hook this week. Go wild.");
+
+                    unskipWeekText = "I'm cooking after all!";
+                    $( "#skip-button" ).button('option', 'label', unskipWeekText);
+                }
+
+                function unskipWeek() {
+                    unskipRequestBody = { "skip": false }
+                    $.ajax({
+                        type: 'PUT',
+                        url: "/skipWeek",
+                        data: JSON.stringify(unskipRequestBody),
+                        contentType: "application/json",
+                        success: unskipWeekSuccessCallback,
+                        complete: function() { 
+                            },
+                        error: skipWeekErrorHandler,
+                        });
+                }
+
+                function unskipWeekSuccessCallback() {
+                    // UPDATE REMAINING SKIPS HERE:
+
+                    showMessage("info", "Okay, you're <b>not</b> skipping. Make us something DELICIOUS.");
+
+                    skipWeekText = "Uh, wait, I'm skipping. Probably!";
+                    $( "#skip-button" ).button('option', 'label', skipWeekText);
+                }
+
+                function skipWeekErrorHandler(jqXHR, textStatus, errorThrown) {
+                    if (jqXHR.status == 403) {
+                        // Handle permission denied error
+                        showMessage("error", "<b>Woah!</b> You can <b>look</b>, but you're not allowed to <b>touch</b>.");
+                    } else {
+                        // Handle all other errors
+                        showMessage("error", "<b>Oops!</b> Something went wrong while saving your skip request.");
+                    }
+                }
+
                 function saveErrorHandler(jqXHR, textStatus, errorThrown) {
                     if (jqXHR.status == 403) {
                         // Handle permission denied error
@@ -229,18 +296,18 @@
               color: #304F80;
             }
 
-            #container { width: 1110px; }
-            #header { width: 1110px; height: 60px; }
+            #container { width: 1200px; }
+            #header { width: 1200px; height: 60px; }
             #header span { margin-left: 80px; }
             #header a { float: right; margin-top: 40px; margin-right: 20px; font-size: 1.2em }
 
             /* Droppable */
-            .draggable { background: White; width: 90px; height: 30px; padding: 0.5em; text-align: center; float: left;  margin: 10px 10px -40px 0; font-size: 1em; }
+            .draggable { width: 95px; height: 50px; padding: 0.2em 0.5em 0.5em 0.5em; text-align: center; float: left; cursor: move; margin: 0 auto -40px auto; font-size: 1em; }*/
 
             .week-name { margin: 1em 0 0 0 }
 
-            #weekdays { float: none; width: 100%; min-height: 10em; } * html #gallery { height: 10em; } /* IE6 */
-            .weekdays li { float: left; width: 100px; height: 100px; padding: 0.4em; margin: 0 0.4em 0.4em 0; text-align: center; }
+            #weekdays { float: none; width: 100%; min-height: 13em; } * html #gallery { height: 13em; } /* IE6 */
+            .weekdays li { float: left; width: 110px; height: 13em; padding: 0.4em; margin: 0 0.4em 0.4em 0; text-align: center; }
 
             #weekday-noday { float: right; margin: 0 0 0.4em 0.4em }
             #weekday-skipping { float: right; margin: 0 0 0.4em 0.4em }
@@ -253,10 +320,16 @@
             #weekday-next-noday { float: right; margin: 0 0 0.4em 0.4em }
             #weekday-next-skipping { float: right; margin: 0 0 0.4em 0.4em }
 
+            .cook-name { margin: 0 0 0 0; font-size: 1.7em }
+            .skips { margin: 8px 0 0 0; float: right; vertical-align: middle; }
+            .skip-text { margin: 0 0 0 0; font-size: 1em; }
+            .skip-count { margin: 0 0 0 0; font-size: 1.5em; }
+
             #draggable-chris { background: LightSalmon; color: #222; }
             #draggable-nick { background: PaleVioletRed; color: #222; }
             #draggable-steve { background: DeepSkyBlue; color: #222; }
             #draggable-zak { background: #0dd; color: #222; }
+
             /*
             #draggable-chris { background: #BBD6FA; color: Snow; }
             #draggable-nick { background: #77975F; color: Snow; }
@@ -277,6 +350,7 @@
             #agnes-turn-current { text-align: center; font-size: 1.2em; } 
             #agnes-turn-next { text-align: right; font-size: 0.9em; margin: 0.5em 0.5em 0.2em 0.5em }
 
+            #skip-button { float: left; width: 100%; margin-top: 5px; margin-left: auto; margin-right: auto; }
         </style>
 </head>
 <body>
@@ -332,10 +406,22 @@
     </div>
 
 
-    <div id="draggable-chris" class="draggable ui-widget-content ui-corner-all thisweek"><p>Chris</p></div>
-    <div id="draggable-nick" class="draggable ui-widget-content ui-corner-all thisweek"><p>Nick</p></div>
-    <div id="draggable-steve" class="draggable ui-widget-content ui-corner-all thisweek"><p>Steve</p></div>
-    <div id="draggable-zak" class="draggable ui-widget-content ui-corner-all thisweek"><p>Zak</p></div>
+    <div id="draggable-chris" class="draggable ui-widget-content ui-corner-all thisweek">
+        <p class="cook-name">Chris</p>
+        <p class="skips"><span class="skip-text">skips left:  </span><span id="skips-remaining" class="skip-count">0</span></p>
+    </div>
+    <div id="draggable-nick" class="draggable ui-widget-content ui-corner-all thisweek">
+        <p class="cook-name">Nick</p>
+        <p class="skips"><span class="skip-text">skips left:  </span><span id="skips-remaining" class="skip-count">0</span></p>
+    </div>
+    <div id="draggable-steve" class="draggable ui-widget-content ui-corner-all thisweek">
+        <p class="cook-name">Steve</p>
+        <p class="skips"><span class="skip-text">skips left:  </span><span id="skips-remaining" class="skip-count">0</span></p>
+    </div>
+    <div id="draggable-zak" class="draggable ui-widget-content ui-corner-all thisweek">
+        <p class="cook-name">Zak</p>
+        <p class="skips"><span class="skip-text">skips left:  </span><span id="skips-remaining" class="skip-count">0</span></p>
+    </div>
 
     <div id="draggable-next-chris" class="draggable ui-widget-content ui-corner-all nextweek"><p>Chris</p></div>
     <div id="draggable-next-nick" class="draggable ui-widget-content ui-corner-all nextweek"><p>Nick</p></div>
