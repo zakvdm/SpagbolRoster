@@ -51,10 +51,10 @@ def getWeekStarts():
     logging.debug("Start of week is: " + str(this_week))
     return this_week, next_week
 
-def getOrInsertWeekByStartDate(week_start): 
+def getOrInsertWeekByStartDate(week_start, new_values): 
     # Prefix key:
     key_name = 'week:' + str(week_start.year) + "-" + str(week_start.month) + "-" + str(week_start.day)
-    return Week.get_or_insert(key_name, start=week_start, chris=NODAY, nick=NODAY, steve=NODAY, zak=NODAY)
+    return Week.get_or_insert(key_name, start=week_start, chris=new_values["chris"], nick=new_values["nick"], steve=new_values["steve"], zak=new_values["zak"])
 
         
 # REQUEST HANDLERS:
@@ -116,27 +116,17 @@ class MainPage(webapp.RequestHandler):
         return agnes_turn, progress, next_agnes_turn
         
 
-class LoadSchedule(webapp.RequestHandler):
+class ScheduleHandler(webapp.RequestHandler):
+    #GET
     def get(self):
-        this_week_start_date, next_week_start_date = getWeekStarts()
+        result = self.loadScheduleFromDb()
 
-        this_week = getOrInsertWeekByStartDate(this_week_start_date)
-        next_week = getOrInsertWeekByStartDate(next_week_start_date)
-
-        this_week_schedule = { "start":this_week_start_date, CHRIS:this_week.chris, NICK:this_week.nick, STEVE:this_week.steve, ZAK:this_week.zak }
-        next_week_schedule = { "start":next_week_start_date, CHRIS:next_week.chris, NICK:next_week.nick, STEVE:next_week.steve, ZAK:next_week.zak }
-
-        logging.info("This week's schedule: " + str(this_week_schedule))
-        logging.info("Next week's schedule: " + str(next_week_schedule))
+        logging.debug(result)
 
         self.response.headers.add_header("Content-Type", "application/json")
-        dthandler = lambda obj: obj.isoformat() if isinstance(obj, date) else None
-        result = json.dumps({"thisweek":this_week_schedule, "nextweek":next_week_schedule}, default=dthandler)
-        logging.debug(result)
         self.response.out.write(result)
 
-class SaveSchedule(webapp.RequestHandler):
-
+    # PUT 
     def put(self):
         # Check that the request was made by a house husbands
         if not users.is_current_user_admin():
@@ -145,12 +135,20 @@ class SaveSchedule(webapp.RequestHandler):
 
         logging.info("Received save request: " + self.request.body);
 
+        new_schedule = json.loads(self.request.body)
+        self.persistSchedule(new_schedule)
+
+        self.notify(new_schedule["thisweek"], new_schedule["reason"])
+
+        self.response.headers.add_header("Content-Type", "application/json") 
+        self.response.out.write(self.loadScheduleFromDb())
+
+    def persistSchedule(self, new_schedule):
         this_week_start_date, next_week_start_date = getWeekStarts()
 
-        this_week = getOrInsertWeekByStartDate(this_week_start_date)
-        next_week = getOrInsertWeekByStartDate(next_week_start_date)
+        this_week = getOrInsertWeekByStartDate(this_week_start_date, new_schedule["thisweek"])
+        next_week = getOrInsertWeekByStartDate(next_week_start_date, new_schedule["nextweek"])
 
-        new_schedule = json.loads(self.request.body)
 
         this_week.chris = new_schedule["thisweek"][CHRIS]
         this_week.nick = new_schedule["thisweek"][NICK]
@@ -166,12 +164,42 @@ class SaveSchedule(webapp.RequestHandler):
         next_week.put()
 
         logging.info("updated schedule");
+  
 
-        self.notify(new_schedule["thisweek"], new_schedule["reason"])
+    def loadScheduleFromDb(self):
+        best_guess_schedule = {CHRIS:NODAY, NICK:NODAY, STEVE:NODAY, ZAK:NODAY}
+        last_schedule = Week.all().order('-start').fetch(1)
+        logging.debug("Getting best guess of schedule in case we're on a new week")
+        for schedule in last_schedule:
+            logging.debug("Found a previous schedule to base the new ones on")
+            best_guess_schedule = {CHRIS:schedule.chris, NICK:schedule.nick, STEVE:schedule.steve, ZAK:schedule.zak}
 
-        self.response.headers.add_header("Content-Type", "application/json") 
-        self.response.out.write("{}")
+        this_week_start_date, next_week_start_date = getWeekStarts()
 
+        this_week = getOrInsertWeekByStartDate(this_week_start_date, best_guess_schedule)
+        next_week = getOrInsertWeekByStartDate(next_week_start_date, best_guess_schedule)
+
+        this_week_schedule = { "start":this_week_start_date, CHRIS:this_week.chris, NICK:this_week.nick, STEVE:this_week.steve, ZAK:this_week.zak }
+        next_week_schedule = { "start":next_week_start_date, CHRIS:next_week.chris, NICK:next_week.nick, STEVE:next_week.steve, ZAK:next_week.zak }
+
+        skips = self.getSkips()
+
+        logging.info("This week's schedule: " + str(this_week_schedule))
+        logging.info("Next week's schedule: " + str(next_week_schedule))
+        logging.info("Skips: " + str(skips))
+
+        dthandler = lambda obj: obj.isoformat() if isinstance(obj, date) else None
+        return json.dumps({"thisweek":this_week_schedule, "nextweek":next_week_schedule, "skips":skips}, default=dthandler)
+        
+
+    def getSkips(self):
+        chrisSkips = Week.all().filter(CHRIS + ' = ', SKIPPING).count()
+        nickSkips = Week.all().filter(NICK + ' = ', SKIPPING).count()
+        steveSkips = Week.all().filter(STEVE + ' = ', SKIPPING).count()
+        zakSkips = Week.all().filter(ZAK + ' = ', SKIPPING).count()
+        totalSkips = 3
+        return { CHRIS:totalSkips - chrisSkips, NICK:totalSkips - nickSkips, STEVE:totalSkips - steveSkips, ZAK:totalSkips - zakSkips }
+    
     def notify(self, schedule, reason):
         chrisSchedule = namesDictionary[CHRIS] + " - " + dayDictionary[schedule[CHRIS]]
         nickSchedule = namesDictionary[NICK] + " - " + dayDictionary[schedule[NICK]]
@@ -228,10 +256,10 @@ class SaveSchedule(webapp.RequestHandler):
 
 
 
+
 application = webapp.WSGIApplication(
                                      [('/', MainPage),
-                                      ('/loadSchedule', LoadSchedule),
-                                      ('/saveSchedule', SaveSchedule)],
+                                      ('/schedule', ScheduleHandler)],
                                      debug=True)
 
 #def main():
