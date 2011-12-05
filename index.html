@@ -7,6 +7,7 @@
         <link type="text/css" href="jqueryui/css/ui-lightness/jquery-ui-1.8.13.custom.css" rel="stylesheet" />
         <script type="text/javascript" src="jqueryui/js/jquery-1.5.1.min.js"></script>
         <script type="text/javascript" src="jqueryui/js/jquery-ui-1.8.13.custom.min.js"></script>
+        <script type="text/javascript" src="https://apis.google.com/js/client.js"></script>
         <script type="text/javascript">
             $(function(){
                 /* *********************** */
@@ -35,6 +36,7 @@
                 assignAllCooksToNoDay();
 
                 loadScheduleFromServer();
+
                 /* *********************** */
 
 
@@ -76,8 +78,35 @@
                         success: function(json) {
                                   loadSchedule(json);
                                   showMessage("info", onLoadMessage);
+                                  
+                                  gapi.client.load('plus', 'v1', loadAvatars );
                               }
                      });
+                }
+
+                function loadAvatars() {
+                    gapi.client.setApiKey('AIzaSyAPnPkvCjMBJirtfe357Ok9USLPAsb2EhQ');
+                    var request = gapi.client.plus.people.get({'userId': '100257668970159398454', 'fields': 'image'});
+                    request.execute(function(response) { loadAvatar(response, 'chris'); });
+                    request = gapi.client.plus.people.get({'userId': '116050942966978259106', 'fields': 'image'});
+                    request.execute(function(response) { loadAvatar(response, 'nick'); });
+                    request = gapi.client.plus.people.get({'userId': '104828771400825560731', 'fields': 'image'});
+                    request.execute(function(response) { loadAvatar(response, 'steve'); });
+                    request = gapi.client.plus.people.get({'userId': '113614459655805716726', 'fields': 'image'});
+                    request.execute(function(response) { loadAvatar(response, 'zak'); });
+                }
+
+                function loadAvatar(response, cook) {
+                    //img_url = response.image.url.replace(/50$/g, '50')
+                    var img = $("<img />").attr('src', response.image.url)
+                                                 .load(function() {
+                                                     if (!this.complete || typeof this.naturalWidth == "undefined" || this.naturalWidth == 0) {
+                                                         alert('broken image!');
+                                                     } else {
+                                                         $("#draggable-" + cook + " .cook-name").replaceWith(img);
+                                                     }
+                                                 });
+
                 }
 
                 function loadSchedule(json) {
@@ -302,12 +331,12 @@
             #header a { float: right; margin-top: 40px; margin-right: 20px; font-size: 1.2em }
 
             /* Droppable */
-            .draggable { width: 95px; height: 50px; padding: 0.2em 0.5em 0.5em 0.5em; text-align: center; float: left; cursor: move; margin: 0 auto -40px auto; font-size: 1em; }
+            .draggable { background: White; width: 75px; height: 70px; padding: 0.2em 0.5em 0.5em 0.5em; text-align: center; float: left; cursor: move; margin: 0 auto -70px auto; font-size: 1em; }
 
             .week-name { margin: 0.5em 0 0 0; font-size: 2em; }
 
             #weekdays { float: none; width: 100%; min-height: 13em; } * html #gallery { height: 13em; } /* IE6 */
-            .weekdays li { float: left; width: 110px; height: 13em; padding: 0.4em; margin: 0 0.4em 0.4em 0; text-align: center; }
+            .weekdays li { float: left; width: 100px; height: 13em; padding: 0.4em; margin: 0 0.4em 0.4em 0; text-align: center; }
 
             #weekday-noday { float: right; margin: 0 0 0.4em 0.4em }
             #weekday-skipping { float: right; margin: 0 0 0.4em 0.4em }
@@ -320,8 +349,8 @@
             #weekday-next-noday { float: right; margin: 0 0 0.4em 0.4em }
             #weekday-next-skipping { float: right; margin: 0 0 0.4em 0.4em }
 
-            .cook-name { margin: 0 0 0 0; font-size: 1.7em }
-            .skips { margin: 8px 0 0 0; float: right; vertical-align: middle; }
+            .cook-name { margin: 1.5em 0 0 0; font-size: 1.7em }
+            .skips { float: right; margin: 2px 0 0 0; float: right; vertical-align: middle; }
             .skip-text { margin: 0 0 0 0; font-size: 1em; }
             .skip-count { margin: 0 0 0 0; font-size: 1.5em; }
 
