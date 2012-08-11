@@ -15,50 +15,13 @@ from google.appengine.ext import webapp
 from google.appengine.ext.webapp import template
 from google.appengine.ext.webapp.util import run_wsgi_app
 
+from constants import *
+from models import *
+from roster import *
+from tasks.notifications import *
+
 TOTAL_SKIPS = 3;
 
-CHRIS, NICK, STEVE, ZAK, NOBODY = "chris", "nick", "steve", "zak", "nobody"
-MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY, NODAY, SKIPPING = "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday", "noday", "skipping"
-COOKING_OPTIONS = [MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY, NODAY, SKIPPING]
-REASON = "reason"
-
-namesDictionary = {CHRIS:"Chris", NICK:"Nick", STEVE:"Steve", ZAK:"Zak", NOBODY:"Nobody"}
-dayDictionary = {MONDAY:"Monday", TUESDAY:"Tuesday", WEDNESDAY:"Wednesday", THURSDAY:"Thursday", FRIDAY:"Friday", SATURDAY:"Saturday", SUNDAY:"Sunday", NODAY:"Not Cooking", SKIPPING:"Skipping"}
-notificationRecipients = "'Chris <chrisdk@gmail.com>', 'Nicholas <nicholas.savage@gmail.com>', 'Stephen <sasherson@gmail.com>', 'Zak <zakvdm@gmail.com>'"
-
-AGNES_PERK = "AGNES"
-
-# DATASTORE ENTITIES:
-class Schedule(db.Model):
-    json = db.StringProperty()
-
-class Week(db.Model):
-    start = db.DateProperty(required=True)
-    chris = db.StringProperty(required=True, choices=set(COOKING_OPTIONS))
-    nick = db.StringProperty(required=True, choices=set(COOKING_OPTIONS))
-    steve = db.StringProperty(required=True, choices=set(COOKING_OPTIONS))
-    zak = db.StringProperty(required=True, choices=set(COOKING_OPTIONS))
-
-class Perk(db.Model):
-    start = db.DateProperty(required=True)
-    type = db.StringProperty(required=True, choices=set([AGNES_PERK]))
-    owner = db.StringProperty(required=True, choices=set([CHRIS, NICK, STEVE, ZAK, NOBODY]))
-
-# HELPER METHODS:
-def getWeekStarts():
-    today = date.today()
-    days_since_monday = timedelta(days=today.weekday())
-    this_week = today - days_since_monday
-    next_week = this_week + timedelta(days=7)
-    logging.debug("Start of week is: " + str(this_week))
-    return this_week, next_week
-
-def getOrInsertWeekByStartDate(week_start, new_values): 
-    # Prefix key:
-    key_name = 'week:' + str(week_start.year) + "-" + str(week_start.month) + "-" + str(week_start.day)
-    return Week.get_or_insert(key_name, start=week_start, chris=new_values["chris"], nick=new_values["nick"], steve=new_values["steve"], zak=new_values["zak"])
-
-        
 # REQUEST HANDLERS:
 class MainPage(webapp.RequestHandler):
     def get(self):
@@ -146,10 +109,10 @@ class ScheduleHandler(webapp.RequestHandler):
         self.response.out.write(self.loadScheduleFromDb())
 
     def persistSchedule(self, new_schedule):
-        this_week_start_date, next_week_start_date = getWeekStarts()
+        this_week_start_date, next_week_start_date = Roster.getWeekStarts()
 
-        this_week = getOrInsertWeekByStartDate(this_week_start_date, new_schedule["thisweek"])
-        next_week = getOrInsertWeekByStartDate(next_week_start_date, new_schedule["nextweek"])
+        this_week = Roster.getOrInsertWeekByStartDate(this_week_start_date, new_schedule["thisweek"])
+        next_week = Roster.getOrInsertWeekByStartDate(next_week_start_date, new_schedule["nextweek"])
 
 
         this_week.chris = new_schedule["thisweek"][CHRIS]
@@ -176,10 +139,10 @@ class ScheduleHandler(webapp.RequestHandler):
             logging.debug("Found a previous schedule to base the new ones on")
             best_guess_schedule = {CHRIS:schedule.chris, NICK:schedule.nick, STEVE:schedule.steve, ZAK:schedule.zak}
 
-        this_week_start_date, next_week_start_date = getWeekStarts()
+        this_week_start_date, next_week_start_date = Roster.getWeekStarts()
 
-        this_week = getOrInsertWeekByStartDate(this_week_start_date, best_guess_schedule)
-        next_week = getOrInsertWeekByStartDate(next_week_start_date, best_guess_schedule)
+        this_week = Roster.getOrInsertWeekByStartDate(this_week_start_date, best_guess_schedule)
+        next_week = Roster.getOrInsertWeekByStartDate(next_week_start_date, best_guess_schedule)
 
         this_week_schedule = { "start":this_week_start_date, CHRIS:this_week.chris, NICK:this_week.nick, STEVE:this_week.steve, ZAK:this_week.zak }
         next_week_schedule = { "start":next_week_start_date, CHRIS:next_week.chris, NICK:next_week.nick, STEVE:next_week.steve, ZAK:next_week.zak }
@@ -261,6 +224,8 @@ class ScheduleHandler(webapp.RequestHandler):
 
 application = webapp.WSGIApplication(
                                      [('/', MainPage),
+                                      ('/tasks/notifications', NotificationsHandler),
+                                      ('/tasks/invites', InvitesHandler),
                                       ('/schedule', ScheduleHandler)],
                                      debug=True)
 

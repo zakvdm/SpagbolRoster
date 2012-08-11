@@ -1,0 +1,6 @@
+cron:
+- description: daily notifications
+  url: /tasks/notifications
+  schedule: every day 10:00
+  timezone: Africa/Johannesburg
+
