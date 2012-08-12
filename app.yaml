@@ -7,5 +7,8 @@ threadsafe: true
 handlers:
 - url: /jqueryui
   static_dir: jqueryui
+- url: /tasks/.*
+  script: tasks.application
+  login: admin
 - url: /.*
   script: main.application

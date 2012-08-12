@@ -18,7 +18,7 @@ from google.appengine.ext.webapp.util import run_wsgi_app
 from constants import *
 from models import *
 from roster import *
-from tasks.notifications import *
+from tasks import *
 
 TOTAL_SKIPS = 3;
 
@@ -224,8 +224,6 @@ class ScheduleHandler(webapp.RequestHandler):
 
 application = webapp.WSGIApplication(
                                      [('/', MainPage),
-                                      ('/tasks/notifications', NotificationsHandler),
-                                      ('/tasks/invites', InvitesHandler),
                                       ('/schedule', ScheduleHandler)],
                                      debug=True)
 

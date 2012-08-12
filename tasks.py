@@ -9,11 +9,6 @@ from roster import *
 
 class NotificationsHandler(webapp.RequestHandler):
     def get(self):
-        # Check that the request was made by a house husband
-        if not users.is_current_user_admin():
-            logging.error("Non-admin user trying to run notifications task")
-            return
-
         logging.info("Running notifications task")
 
         chef = Roster.getTodaysChef()
@@ -43,11 +38,6 @@ class NotificationsHandler(webapp.RequestHandler):
 
 class InvitesHandler(webapp.RequestHandler):
     def get(self):
-        # Check that the request was made by a house husband
-        if not users.is_current_user_admin():
-            logging.error("Non-admin user trying to run invites task")
-            return
-
         logging.info("Inviting House Husbands to chat")
 
         xmpp.send_invite(ADDRESSES[CHRIS])
@@ -57,4 +47,9 @@ class InvitesHandler(webapp.RequestHandler):
 
         logging.debug("Invites sent!")
 
+
+application = webapp.WSGIApplication(
+                                     [('/tasks/notifications', NotificationsHandler),
+                                      ('/tasks/invites', InvitesHandler)],
+                                     debug=True)
 
